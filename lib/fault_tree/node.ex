@@ -15,7 +15,7 @@ defmodule FaultTree.Node do
   name: Unique name for the node
   description: Verbose description of the node
   probability: Probability of failure. Calculated for all logic gate types, must be set for `:basic`
-  atleast: Tuple of {k,n} for ATLEAST gate calculation
+  atleast: Tuple of {k,n} for ATLEAST gate calculation. `nil` for everything else
   """
   typedstruct do
     field :id, integer()

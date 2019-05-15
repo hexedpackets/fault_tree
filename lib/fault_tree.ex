@@ -13,15 +13,30 @@ defmodule FaultTree do
     field :nodes, list(Node.t()), default: []
   end
 
+  @doc """
+  Create a new fault tree with an `OR` gate as the root.
+  """
   def create(), do: create(:or)
+
+  @doc """
+  Create a new fault tree with the passed in `Node` as the root.
+  """
   def create(root = %Node{}) do
     %FaultTree{next_id: root.id + 1, nodes: [root]}
   end
+
+  @doc """
+  Create a new fault tree and generate a node of the given type for the root.
+  """
   def create(root_type) when root_type != :basic do
     %Node{id: 0, name: "root", type: root_type}
     |> create()
   end
 
+  @doc """
+  Add a node to the fault tree. Some validations are performed to make sure the node can
+  logically be added to the tree.
+  """
   def add_node(tree, node) do
     id = tree.next_id
     node = node |> Map.put(:id, id)
@@ -37,25 +52,43 @@ defmodule FaultTree do
     end
   end
 
+  @doc """
+  Add a basic node to the fault tree. Basic events have a pre-defined probability.
+  """
   def add_basic(tree, parent, probability, name, description \\ nil) do
     node = %Node{type: :basic, name: name, probability: Decimal.new(probability), parent: parent, description: description}
     add_node(tree, node)
   end
 
+  @doc """
+  Add a logic gate to the fault tree.
+  """
   def add_logic(tree, parent, type, name, description \\ nil) do
     node = %Node{type: type, name: name, parent: parent, description: description}
     add_node(tree, node)
   end
 
+  @doc """
+  Add an OR gate to the fault tree. Any child nodes failing will cause this node to fail.
+  """
   def add_or_gate(tree, parent, name, description \\ nil), do: add_logic(tree, parent, :or, name, description)
+
+  @doc """
+  Add an AND gate to the fault tree. All children must fail for this node to fail.
+  """
   def add_and_gate(tree, parent, name, description \\ nil), do: add_logic(tree, parent, :and, name, description)
+
+  @doc """
+  Add an ATLEAST/VOTING gate to the fault tree. This rqeuires that a minimum of K out of N child nodes fail in
+  order to be marked as failing.
+  """
   def add_atleast_gate(tree, parent, min, total, name, description \\ nil) do
     node = %Node{type: :atleast, name: name, parent: parent, description: description, atleast: {min, total}}
     add_node(tree, node)
   end
 
   @doc """
-  Perform some basic validation for a new node.
+  Perform some validation for a new node against the existing tree.
   """
   def validate_node(tree, node) do
     with {:ok, tree} <- validate_parent(tree, node),
@@ -85,7 +118,8 @@ defmodule FaultTree do
   end
 
   @doc """
-  Validate that a probability is only set on basic nodes. Logic gates will have their probability calculated when the tree is built.
+  Validate that a probability is only set on basic nodes.
+  Logic gates will have their probability calculated when the tree is built.
   """
   def validate_probability(tree, node) do
     case node do
@@ -107,7 +141,8 @@ defmodule FaultTree do
   end
 
   @doc """
-  Calculate the probability of failure for a given node. The node must have all of its children with defined probabilities.
+  Calculate the probability of failure for a given node.
+  The node must have all of its children with defined probabilities.
   """
   def probability(node = %{node: %Node{type: :basic}}), do: node
   def probability(node = %{node: %Node{probability: p}}) when p != nil, do: node

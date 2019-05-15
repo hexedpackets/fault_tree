@@ -16,7 +16,7 @@ defmodule FaultTreeTest do
 
   test "OR gate probability", %{or_tree: tree} do
     tree = FaultTree.build(tree)
-    assert tree.node.probability == Decimal.new("0.02")
+    assert tree.node.probability == Decimal.new("0.0199")
   end
 
   test "AND gate probability", %{and_tree: tree} do
@@ -31,6 +31,6 @@ defmodule FaultTreeTest do
     |> FaultTree.add_basic("l2", "0.02", "l2_bar")
     |> FaultTree.build()
 
-    assert tree.node.probability == Decimal.new("0.06")
+    assert tree.node.probability == Decimal.new("0.05871196")
   end
 end

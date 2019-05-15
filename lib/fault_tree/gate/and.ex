@@ -1,6 +1,8 @@
 defmodule FaultTree.Gate.And do
   @moduledoc """
   Handling for AND logic gates.
+
+  P (A and B) = P (A ∩ B) = P(A) * P(B)
   """
 
   def probability(nodes) do

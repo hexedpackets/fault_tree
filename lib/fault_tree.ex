@@ -66,10 +66,14 @@ defmodule FaultTree do
     add_node(tree, node)
   end
 
-  def add_or_gate(tree, parent, name, description \\ nil) do
-    node = %Node{type: :or, name: name, parent: parent, description: description}
+  def add_logic(tree, parent, type, name, description \\ nil) do
+    node = %Node{type: type, name: name, parent: parent, description: description}
     add_node(tree, node)
   end
+
+  def add_or_gate(tree, parent, name, description \\ nil), do: add_logic(tree, parent, :or, name, description)
+
+  def add_and_gate(tree, parent, name, description \\ nil), do: add_logic(tree, parent, :and, name, description)
 
   @doc """
   Perform some basic validation for a new node.
@@ -116,6 +120,7 @@ defmodule FaultTree do
     p =
       case node.type do
         :or -> Gate.Or.probability(children)
+        :and -> Gate.And.probability(children)
       end
     %{node: Map.put(node, :probability, p), children: children}
   end

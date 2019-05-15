@@ -7,16 +7,24 @@ defmodule FaultTreeTest do
     |> FaultTree.add_basic("root", "0.01", "foo")
     |> FaultTree.add_basic("root", "0.01", "bar")
 
-    %{or_tree: or_tree}
+    and_tree = FaultTree.create(:and)
+    |> FaultTree.add_basic("root", "0.01", "foo")
+    |> FaultTree.add_basic("root", "0.01", "bar")
+
+    %{or_tree: or_tree, and_tree: and_tree}
   end
 
-  test "simplest or gate", %{or_tree: or_tree} do
-    tree = FaultTree.build(or_tree)
-
+  test "OR gate probability", %{or_tree: tree} do
+    tree = FaultTree.build(tree)
     assert tree.node.probability == Decimal.new("0.02")
   end
 
-  test "multi level or gate", %{or_tree: or_tree} do
+  test "AND gate probability", %{and_tree: tree} do
+    tree = FaultTree.build(tree)
+    assert tree.node.probability == Decimal.new("0.0001")
+  end
+
+  test "multi level gates", %{or_tree: or_tree} do
     tree = or_tree
     |> FaultTree.add_or_gate("root", "l2")
     |> FaultTree.add_basic("l2", "0.02", "l2_foo")

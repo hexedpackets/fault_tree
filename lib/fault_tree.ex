@@ -28,7 +28,7 @@ defmodule FaultTree do
     """
     typedstruct do
       field :id, integer()
-      field :parent, integer()
+      field :parent, String.t()
       field :type, node_type(), default: :basic
       field :name, String.t(), enforce: true
       field :description, String.t()
@@ -50,10 +50,10 @@ defmodule FaultTree do
     id = tree.next_id
     node = node |> Map.put(:id, id)
 
-    case validate_parent(tree, node) do
+    case validate_node(tree, node) do
       {:error, msg} ->
         Logger.error(msg)
-        {:error, :invalid_parent}
+        {:error, :invalid}
       {:ok, tree} ->
         tree
         |> Map.put(:next_id, id + 1)
@@ -62,18 +62,47 @@ defmodule FaultTree do
   end
 
   def add_basic(tree, parent, probability, name, description \\ nil) do
-    node = %Node{name: name, probability: Decimal.new(probability), parent: parent, description: description}
+    node = %Node{type: :basic, name: name, probability: Decimal.new(probability), parent: parent, description: description}
     add_node(tree, node)
+  end
+
+  def add_or_gate(tree, parent, name, description \\ nil) do
+    node = %Node{type: :or, name: name, parent: parent, description: description}
+    add_node(tree, node)
+  end
+
+  @doc """
+  Perform some basic validation for a new node.
+  """
+  def validate_node(tree, node) do
+    with {:ok, tree} <- validate_parent(tree, node),
+         {:ok, tree} <- validate_probability(tree, node) do
+      {:ok, tree}
+    else
+      err -> err
+    end
   end
 
   @doc """
   Validate that the gate types allow setting this node as a child of its listed parent.
   """
   def validate_parent(tree, node) do
-    parent = tree.nodes |> Enum.find(fn n -> n.id == node.parent end)
+    parent = tree.nodes |> Enum.find(fn n -> n.name == node.parent end)
     case parent do
       nil -> {:error, "Parent not found in tree"}
       %Node{type: :basic} -> {:error, "Basic nodes cannot have children"}
+      _ -> {:ok, tree}
+    end
+  end
+
+  @doc """
+  Validate that a probability is only set on basic nodes. Logic gates will have their probability calculated when the tree is built.
+  """
+  def validate_probability(tree, node) do
+    case node do
+      %Node{type: :basic, probability: p} when p > 0 and p != nil -> {:ok, tree}
+      %Node{type: :basic} -> {:error, "Basic events must have a probability set"}
+      %Node{probability: p} when p > 0 and p != nil -> {:error, "Only basic events should have a probability set"}
       _ -> {:ok, tree}
     end
   end
@@ -109,7 +138,7 @@ defmodule FaultTree do
     |> probability()
   end
 
-  defp find_children(node, nodes), do: Enum.filter(nodes, fn x -> x.parent == node.id end)
+  defp find_children(node, nodes), do: Enum.filter(nodes, fn x -> x.parent == node.name end)
   defp find_root(tree), do: find_by_id(tree, 0)
   defp find_by_id(tree, id), do: tree.nodes |> Enum.find(fn %{id: i} -> i == id end)
 end

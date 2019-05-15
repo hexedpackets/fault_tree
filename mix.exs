@@ -21,6 +21,7 @@ defmodule FaultTree.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:typed_struct, "~> 0.1.4"},
       {:decimal, "~> 1.7"},
       {:trot, "~> 0.7"},
       {:plug_cowboy, "~> 1.0"},

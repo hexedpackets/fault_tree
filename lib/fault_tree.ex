@@ -3,16 +3,31 @@ defmodule FaultTree do
   Documentation for FaultTree.
   """
 
-  @doc """
-  Hello world.
+  defmodule Node do
+    use TypedStruct
 
-  ## Examples
+    @typedoc """
+    Logic gate type for a node.
+    """
+    @type node_type :: :basic | :or | :and | :atleast
 
-      iex> FaultTree.hello()
-      :world
+    @typedoc """
+    A single node in the fault tree.
 
-  """
-  def hello do
-    :world
+    id: unique ID for the node
+    parent: ID of the parent node. `0` represents the root node
+    type: Gate type for the node
+    name: Unique name for the node
+    description: Verbose description of the node
+    probability: Probability of failure. Calculated for all logic gate types, must be set for `:basic`
+    """
+    typedstruct enforce: true do
+      field :id, integer()
+      field :parent, integer(), default: 0
+      field :type, node_type(), default: :basic
+      field :name, String.t()
+      field :description, enforce: false
+      field :probability, Decimal.t()
+    end
   end
 end

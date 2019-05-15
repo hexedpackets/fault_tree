@@ -1,5 +1,6 @@
 defmodule FaultTreeTest do
   use ExUnit.Case
+  import ExUnit.CaptureLog
   doctest FaultTree
 
   setup do
@@ -12,6 +13,15 @@ defmodule FaultTreeTest do
     |> FaultTree.add_basic("root", "0.01", "bar")
 
     %{or_tree: or_tree, and_tree: and_tree}
+  end
+
+  test "ATLEAST can only have a single child" do
+    tree = FaultTree.create(:atleast)
+    |> FaultTree.add_basic("root", "0.01", "foo")
+
+    capture_log(fn ->
+      assert FaultTree.add_basic(tree, "root", "0.01", "bar") == {:error, :invalid}
+    end)
   end
 
   test "OR gate probability", %{or_tree: tree} do
@@ -32,5 +42,14 @@ defmodule FaultTreeTest do
     |> FaultTree.build()
 
     assert tree.node.probability == Decimal.new("0.05871196")
+  end
+
+  test "ATLEAST gate probability" do
+    tree = %FaultTree.Node{type: :atleast, id: 0, name: "root", atleast: {2, 3}}
+    |> FaultTree.create()
+    |> FaultTree.add_basic("root", "0.01", "foo")
+    |> FaultTree.build()
+
+    assert tree.node.probability == Decimal.new("0.0001495")
   end
 end

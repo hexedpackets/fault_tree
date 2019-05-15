@@ -25,6 +25,7 @@ defmodule FaultTree do
     name: Unique name for the node
     description: Verbose description of the node
     probability: Probability of failure. Calculated for all logic gate types, must be set for `:basic`
+    atleast: Tuple of {k,n} for ATLEAST gate calculation
     """
     typedstruct do
       field :id, integer()
@@ -33,6 +34,7 @@ defmodule FaultTree do
       field :name, String.t(), enforce: true
       field :description, String.t()
       field :probability, Decimal.t()
+      field :atleast, {integer(), integer()}
     end
   end
 
@@ -41,9 +43,13 @@ defmodule FaultTree do
     field :nodes, list(Node.t()), default: []
   end
 
-  def create(root_type \\ :or) when root_type != :basic do
-    root = %Node{id: 0, name: "root", type: root_type}
-    %FaultTree{next_id: 1, nodes: [root]}
+  def create(), do: create(:or)
+  def create(root = %Node{}) do
+    %FaultTree{next_id: root.id + 1, nodes: [root]}
+  end
+  def create(root_type) when root_type != :basic do
+    %Node{id: 0, name: "root", type: root_type}
+    |> create()
   end
 
   def add_node(tree, node) do
@@ -72,15 +78,19 @@ defmodule FaultTree do
   end
 
   def add_or_gate(tree, parent, name, description \\ nil), do: add_logic(tree, parent, :or, name, description)
-
   def add_and_gate(tree, parent, name, description \\ nil), do: add_logic(tree, parent, :and, name, description)
+  def add_atleast_gate(tree, parent, min, total, name, description \\ nil) do
+    node = %Node{type: :atleast, name: name, parent: parent, description: description, atleast: {min, total}}
+    add_node(tree, node)
+  end
 
   @doc """
   Perform some basic validation for a new node.
   """
   def validate_node(tree, node) do
     with {:ok, tree} <- validate_parent(tree, node),
-         {:ok, tree} <- validate_probability(tree, node) do
+         {:ok, tree} <- validate_probability(tree, node),
+         {:ok, tree} <- validate_atleast(tree, node) do
       {:ok, tree}
     else
       err -> err
@@ -95,6 +105,11 @@ defmodule FaultTree do
     case parent do
       nil -> {:error, "Parent not found in tree"}
       %Node{type: :basic} -> {:error, "Basic nodes cannot have children"}
+      %Node{type: :atleast} ->
+        case find_children(parent, tree.nodes) do
+          [] -> {:ok, tree}
+          _ -> {:error, "ATLEAST gates can only have a single child node"}
+        end
       _ -> {:ok, tree}
     end
   end
@@ -112,6 +127,16 @@ defmodule FaultTree do
   end
 
   @doc """
+  Validate that ATLEAST gates have their parameters set.
+  """
+  def validate_atleast(tree, node) do
+    case node do
+      %Node{type: :atleast, atleast: nil} -> {:error, "ATLEAST gates must have minimum and total set"}
+      _ -> {:ok, tree}
+    end
+  end
+
+  @doc """
   Calculate the probability of failure for a given node. The node must have all of its children with defined probabilities.
   """
   def probability(node = %{node: %Node{type: :basic}}), do: node
@@ -121,6 +146,7 @@ defmodule FaultTree do
       case node.type do
         :or -> Gate.Or.probability(children)
         :and -> Gate.And.probability(children)
+        :atleast -> Gate.AtLeast.probability(node.atleast, children)
       end
     %{node: Map.put(node, :probability, p), children: children}
   end

@@ -5,22 +5,27 @@ defmodule FaultTree do
 
   use TypedStruct
   require Logger
-  alias FaultTree.Node
   alias FaultTree.Gate
+  alias FaultTree.Node
 
   typedstruct do
     field :next_id, integer(), default: 0
     field :nodes, list(Node.t()), default: []
   end
 
+  @type error_type :: {:error, String.t()}
+  @type result :: t() | error_type()
+
   @doc """
   Create a new fault tree with an `OR` gate as the root.
   """
+  @spec create() :: t()
   def create(), do: create(:or)
 
   @doc """
   Create a new fault tree with the passed in `Node` as the root.
   """
+  @spec create(Node.t()) :: t()
   def create(root = %Node{}) do
     %FaultTree{next_id: root.id + 1, nodes: [root]}
   end
@@ -28,6 +33,7 @@ defmodule FaultTree do
   @doc """
   Create a new fault tree and generate a node of the given type for the root.
   """
+  @spec create(atom) :: t()
   def create(root_type) when root_type != :basic do
     %Node{id: 0, name: "root", type: root_type}
     |> create()
@@ -37,6 +43,7 @@ defmodule FaultTree do
   Add a node to the fault tree. Some validations are performed to make sure the node can
   logically be added to the tree.
   """
+  @spec add_node(FaultTree.t(), Node.t()) :: result()
   def add_node(tree, node) do
     id = tree.next_id
     node = node |> Map.put(:id, id)
@@ -53,10 +60,14 @@ defmodule FaultTree do
   end
 
   @doc """
-  Add a basic node to the fault tree. Basic events have a pre-defined probability.
+  Add a basic node to the fault tree with a pre-defined probability.
   """
-  def add_basic(tree, parent, probability, name, description \\ nil) do
-    node = %Node{type: :basic, name: name, probability: Decimal.new(probability), parent: parent, description: description}
+  def add_basic(tree, probability, name), do: add_basic(tree, nil, probability, name, nil)
+  def add_basic(tree, parent, probability, name), do: add_basic(tree, parent, probability, name, nil)
+
+  def add_basic(tree, parent, probability, name, description) do
+    node = %Node{type: :basic, name: name, probability: Decimal.new(probability),
+                 parent: parent, description: description}
     add_node(tree, node)
   end
 
@@ -93,10 +104,21 @@ defmodule FaultTree do
   def validate_node(tree, node) do
     with {:ok, tree} <- validate_parent(tree, node),
          {:ok, tree} <- validate_probability(tree, node),
-         {:ok, tree} <- validate_atleast(tree, node) do
+         {:ok, tree} <- validate_atleast(tree, node),
+         {:ok, tree} <- validate_name(tree, node) do
       {:ok, tree}
     else
       err -> err
+    end
+  end
+
+  @doc """
+  Validate that the name of the node is unique in the fault tree.
+  """
+  def validate_name(tree, %{name: new_name}) do
+    case Enum.find(tree.nodes, fn %{name: name} -> name == new_name end) do
+      nil -> {:ok, tree}
+      _ -> {:error, "Name already exists in the tree"}
     end
   end
 

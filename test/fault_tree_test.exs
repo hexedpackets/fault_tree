@@ -52,4 +52,12 @@ defmodule FaultTreeTest do
 
     assert tree.node.probability == Decimal.new("0.0001495")
   end
+
+  test "names of nodes are unique", %{or_tree: tree} do
+    new = FaultTree.validate_name(tree, %{name: "jimjamjon"})
+    old = FaultTree.validate_name(tree, %{name: "root"})
+
+    assert elem(new, 0)  == :ok
+    assert elem(old, 0)  == :error
+  end
 end

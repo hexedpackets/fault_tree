@@ -9,7 +9,7 @@ defmodule FaultTree.Gate.AtLeast do
   alias FaultTree.Math
 
   def probability({min, total}, [child]) do
-    calc(child.node.probability, min, total)
+    calc(child.probability, min, total)
   end
 
   @doc """

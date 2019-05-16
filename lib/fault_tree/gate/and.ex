@@ -7,7 +7,7 @@ defmodule FaultTree.Gate.And do
 
   def probability(nodes) do
     nodes
-    |> Stream.map(fn n -> n.node.probability end)
+    |> Stream.map(fn node -> node.probability end)
     |> Enum.reduce(Decimal.new(1), fn p, acc -> Decimal.mult(p, acc) end)
   end
 end

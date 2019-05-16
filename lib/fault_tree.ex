@@ -166,16 +166,16 @@ defmodule FaultTree do
   Calculate the probability of failure for a given node.
   The node must have all of its children with defined probabilities.
   """
-  def probability(node = %{node: %Node{type: :basic}}), do: node
-  def probability(node = %{node: %Node{probability: p}}) when p != nil, do: node
-  def probability(%{node: node, children: children}) do
+  def probability(node = %Node{type: :basic}), do: node
+  def probability(node = %Node{probability: p}) when p != nil, do: node
+  def probability(node = %Node{}) do
     p =
       case node.type do
-        :or -> Gate.Or.probability(children)
-        :and -> Gate.And.probability(children)
-        :atleast -> Gate.AtLeast.probability(node.atleast, children)
+        :or -> Gate.Or.probability(node.children)
+        :and -> Gate.And.probability(node.children)
+        :atleast -> Gate.AtLeast.probability(node.atleast, node.children)
       end
-    %{node: Map.put(node, :probability, p), children: children}
+    Map.put(node, :probability, p)
   end
 
   @doc """
@@ -192,8 +192,18 @@ defmodule FaultTree do
     |> find_children(tree.nodes)
     |> Enum.map(fn n -> build(n, tree) end)
 
-    %{node: node, children: children}
+    node
+    |> Map.put(:children, children)
     |> probability()
+  end
+
+  @doc """
+  Convert a tree to JSON.
+  """
+  @spec to_json(t() | map()) :: String.t()
+  def to_json(tree = %FaultTree{}), do: tree |> build() |> to_json()
+  def to_json(tree) do
+    Poison.encode!(tree)
   end
 
   defp find_children(node, nodes), do: Enum.filter(nodes, fn x -> x.parent == node.name end)

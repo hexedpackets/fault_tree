@@ -26,12 +26,12 @@ defmodule FaultTreeTest do
 
   test "OR gate probability", %{or_tree: tree} do
     tree = FaultTree.build(tree)
-    assert tree.node.probability == Decimal.new("0.0199")
+    assert tree.probability == Decimal.new("0.0199")
   end
 
   test "AND gate probability", %{and_tree: tree} do
     tree = FaultTree.build(tree)
-    assert tree.node.probability == Decimal.new("0.0001")
+    assert tree.probability == Decimal.new("0.0001")
   end
 
   test "multi level gates", %{or_tree: or_tree} do
@@ -41,7 +41,7 @@ defmodule FaultTreeTest do
     |> FaultTree.add_basic("l2", "0.02", "l2_bar")
     |> FaultTree.build()
 
-    assert tree.node.probability == Decimal.new("0.05871196")
+    assert tree.probability == Decimal.new("0.05871196")
   end
 
   test "ATLEAST gate probability" do
@@ -50,7 +50,7 @@ defmodule FaultTreeTest do
     |> FaultTree.add_basic("root", "0.01", "foo")
     |> FaultTree.build()
 
-    assert tree.node.probability == Decimal.new("0.0001495")
+    assert tree.probability == Decimal.new("0.0001495")
   end
 
   test "names of nodes are unique", %{or_tree: tree} do

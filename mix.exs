@@ -25,6 +25,7 @@ defmodule FaultTree.MixProject do
       {:decimal, "~> 1.7"},
       {:trot, "~> 0.7"},
       {:plug_cowboy, "~> 1.0"},
+      {:poison, "~> 3.1.0"},
     ]
   end
 end

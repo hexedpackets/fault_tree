@@ -1,4 +1,8 @@
 defmodule FaultTree.Router do
+  @moduledoc """
+  Handler for HTTP requests.
+  """
+
   use Trot.Router
   use Trot.Template
 

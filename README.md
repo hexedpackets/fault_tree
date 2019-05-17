@@ -4,7 +4,7 @@ FaultTree is a library for performing [fault tree analysis](https://en.wikipedia
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+The FaultTree package can be installed from Hex
 by adding `fault_tree` to your list of dependencies in `mix.exs`:
 
 ```elixir
@@ -15,9 +15,7 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/fault_tree](https://hexdocs.pm/fault_tree).
+Documentation can be found at [https://hexdocs.pm/fault_tree](https://hexdocs.pm/fault_tree).
 
 ## Running
 

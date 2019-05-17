@@ -2,7 +2,7 @@ defmodule FaultTree.Parser.XML do
   @moduledoc """
   Parse an XML document into a FaultTree.
   The XML schema expected is mostly for opsa-mef, defined at:
-  https://raw.githubusercontent.com/rakhimov/scram/master/share/input.rng
+  [https://github.com/rakhimov/scram/blob/master/share/input.rng](https://github.com/rakhimov/scram/blob/master/share/input.rng)
   """
 
   import SweetXml
@@ -26,6 +26,7 @@ defmodule FaultTree.Parser.XML do
   - boolean events
   - a bunch of other things from https://raw.githubusercontent.com/rakhimov/scram/master/share/input.rng
   """
+  @spec parse(String.t()) :: map()
   def parse(doc) do
     tree = %FaultTree{}
     root = doc |> xpath(~x"/opsa-mef"e)

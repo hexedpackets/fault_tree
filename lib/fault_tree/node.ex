@@ -1,4 +1,8 @@
 defmodule FaultTree.Node do
+  @moduledoc """
+  Individual nodes inside of a fault tree.
+  """
+
   use TypedStruct
 
   @typedoc """

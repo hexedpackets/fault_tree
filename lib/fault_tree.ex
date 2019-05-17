@@ -1,6 +1,6 @@
 defmodule FaultTree do
   @moduledoc """
-  Documentation for FaultTree.
+  Main module for creating and interacting with fault trees.
   """
 
   use TypedStruct

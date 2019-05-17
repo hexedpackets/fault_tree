@@ -63,9 +63,13 @@ defmodule FaultTreeTest do
 
   test "TRANSFER gate probability", %{or_tree: or_tree} do
     tree = or_tree
-    |> FaultTree.add_transfer("root", "foo")
+    |> FaultTree.add_or_gate("root", "l2")
+    |> FaultTree.add_and_gate("l2", "host")
+    |> FaultTree.add_basic("host", "0.1", "disk")
+    |> FaultTree.add_basic("host", "0.1", "backup")
+    |> FaultTree.add_transfer("root", "host")
     |> FaultTree.build()
 
-    assert tree.probability == Decimal.new("0.029701")
+    assert tree.probability == Decimal.new("0.03940399")
   end
 end

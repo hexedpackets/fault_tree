@@ -27,7 +27,7 @@ defmodule FaultTree.Node do
     field :description, String.t()
     field :probability, Decimal.t()
     field :atleast, {integer(), integer()}
-    field :children, list(t())
+    field :children, list(t()), default: []
     field :source, String.t()
   end
 end

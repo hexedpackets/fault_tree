@@ -5,7 +5,6 @@ defmodule FaultTree do
 
   use TypedStruct
   require Logger
-  alias FaultTree.Gate
   alias FaultTree.Node
 
   typedstruct do
@@ -187,46 +186,6 @@ defmodule FaultTree do
   def validate_transfer(tree, _node), do: {:ok, tree}
 
   @doc """
-  Calculate the probability of failure for a given node.
-  The node must have all of its children with defined probabilities.
-
-  For TRANSFER gates, the probability is copied from the source node. If the
-  source node was not calculated before the transfer gate is reached, the probability
-  will be calculated twice. This will be inefficient, but mathemetically correct.
-  """
-  def probability(node = %Node{type: :basic}, _tree), do: node
-  def probability(node = %Node{probability: p}, _tree) when p != nil, do: node
-  def probability(node = %Node{}, tree) do
-    p =
-      case node.type do
-        :or -> Gate.Or.probability(node.children)
-        :and -> Gate.And.probability(node.children)
-        :atleast -> Gate.AtLeast.probability(node.atleast, node.children)
-        :transfer -> tree |> find_source_node(node.source) |> probability(tree) |> Map.get(:probability)
-      end
-    Map.put(node, :probability, p)
-  end
-
-  @doc """
-  Converts a `FaultTree` struct into a hierarchical map.
-  """
-  def build(tree) do
-    tree
-    |> find_root()
-    |> build(tree)
-  end
-
-  defp build(node, tree) do
-    children = node
-    |> find_children(tree.nodes)
-    |> Enum.map(fn n -> build(n, tree) end)
-
-    node
-    |> Map.put(:children, children)
-    |> probability(tree)
-  end
-
-  @doc """
   Convert a tree to JSON.
   """
   @spec to_json(t() | map()) :: String.t()
@@ -235,24 +194,14 @@ defmodule FaultTree do
     Poison.encode!(tree)
   end
 
+  def build(tree), do: FaultTree.Analyzer.process(tree)
+
   @doc """
   Convert from a string containing fault tree logic into the tree object.
   """
   @spec parse(String.t()) :: t()
   def parse(doc), do: FaultTree.Parser.XML.parse(doc)
 
-  defp find_children(node, nodes), do: Enum.filter(nodes, fn x -> x.parent == node.name end)
-  defp find_root(tree), do: Enum.find(tree.nodes, &valid_root?/1)
+  def find_children(node, nodes), do: Enum.filter(nodes, fn x -> x.parent == node.name end)
   defp find_by_field(tree, field, value), do: tree.nodes |> Enum.find(fn node -> Map.get(node, field) == value end)
-
-  defp valid_root?(%Node{type: :basic}), do: false
-  defp valid_root?(%Node{type: :transfer}), do: false
-  defp valid_root?(%Node{parent: :nil}), do: true
-  defp valid_root?(_), do: false
-
-  defp find_source_node(tree, source) do
-    tree.nodes
-    |> Stream.filter(fn %Node{type: type} -> type != :transfer end)
-    |> Enum.find(fn %Node{name: name} -> name == source end)
-  end
 end

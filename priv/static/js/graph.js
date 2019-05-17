@@ -64,19 +64,6 @@ const update = source => {
   const links = tree.links(nodes);
   const node = svg.selectAll("g.node").data(nodes, d => d.id);
 
-  // original params:
-  //
-  // moe indicates when a node is a duplicate
-  // name, name2 are descriptions
-  // tag is name
-  // type is int of type
-  // p1/p2 are used for k and n in voting gates
-  // crt is MTTR
-  // pbf is probability
-  // etype == ???
-  // collapse indicates whether to default to a collapsed node
-  // _children is an array of children when a node is collapsed
-
   const nodeEnter = node
     .enter()
     .append("g")

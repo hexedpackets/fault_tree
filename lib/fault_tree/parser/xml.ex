@@ -8,6 +8,10 @@ defmodule FaultTree.Parser.XML do
   import SweetXml
   alias FaultTree.Node
 
+  def load_file() do
+    :code.priv_dir(:fault_tree) |> Path.join("pubsub_consumer.mef") |> File.read!()
+  end
+
   @doc """
   Parse the XML document into a FaultTree.
 

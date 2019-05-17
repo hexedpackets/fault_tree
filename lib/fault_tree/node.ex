@@ -4,7 +4,7 @@ defmodule FaultTree.Node do
   @typedoc """
   Logic gate type for a node.
   """
-  @type node_type :: :basic | :or | :and | :atleast
+  @type node_type :: :basic | :or | :and | :atleast | :transfer
 
   @typedoc """
   A single node in the fault tree.
@@ -16,6 +16,8 @@ defmodule FaultTree.Node do
   description: Verbose description of the node
   probability: Probability of failure. Calculated for all logic gate types, must be set for `:basic`
   atleast: Tuple of {k,n} for ATLEAST gate calculation. `nil` for everything else
+  children: List of child nodes, used when the tree is built
+  source: Name of the source node if this is a transfer.
   """
   typedstruct do
     field :id, integer()
@@ -26,5 +28,6 @@ defmodule FaultTree.Node do
     field :probability, Decimal.t()
     field :atleast, {integer(), integer()}
     field :children, list(t())
+    field :source, String.t()
   end
 end

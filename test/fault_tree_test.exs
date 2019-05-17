@@ -60,4 +60,12 @@ defmodule FaultTreeTest do
     assert elem(new, 0)  == :ok
     assert elem(old, 0)  == :error
   end
+
+  test "TRANSFER gate probability", %{or_tree: or_tree} do
+    tree = or_tree
+    |> FaultTree.add_transfer("root", "foo")
+    |> FaultTree.build()
+
+    assert tree.probability == Decimal.new("0.029701")
+  end
 end

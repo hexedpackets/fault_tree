@@ -99,12 +99,22 @@ defmodule FaultTree do
   end
 
   @doc """
+  Add a transfer node. This is a reference to a node that already exists in the tree. Transfer nodes cannot have anything modified,
+  changes must happen on the source.
+  """
+  def add_transfer(tree, parent, source) do
+    node = %Node{type: :transfer, source: source, name: source, parent: parent}
+    add_node(tree, node)
+  end
+
+  @doc """
   Perform some validation for a new node against the existing tree.
   """
   def validate_node(tree, node) do
     with {:ok, tree} <- validate_parent(tree, node),
          {:ok, tree} <- validate_probability(tree, node),
          {:ok, tree} <- validate_atleast(tree, node),
+         {:ok, tree} <- validate_transfer(tree, node),
          {:ok, tree} <- validate_name(tree, node) do
       {:ok, tree}
     else
@@ -115,6 +125,7 @@ defmodule FaultTree do
   @doc """
   Validate that the name of the node is unique in the fault tree.
   """
+  def validate_name(tree, %{type: :transfer, name: name, source: source}) when name == source, do: {:ok, tree}
   def validate_name(tree, %{name: new_name}) do
     case Enum.find(tree.nodes, fn %{name: name} -> name == new_name end) do
       nil -> {:ok, tree}
@@ -126,10 +137,11 @@ defmodule FaultTree do
   Validate that the gate types allow setting this node as a child of its listed parent.
   """
   def validate_parent(tree, node) do
-    parent = tree.nodes |> Enum.find(fn n -> n.name == node.parent end)
+    parent = find_by_field(tree, :name, node.parent)
     case parent do
       nil -> {:error, "Parent not found in tree"}
       %Node{type: :basic} -> {:error, "Basic nodes cannot have children"}
+      %Node{type: :transfer} -> {:error, "Transfer nodes cannot have children"}
       %Node{type: :atleast} ->
         case find_children(parent, tree.nodes) do
           [] -> {:ok, tree}
@@ -163,17 +175,33 @@ defmodule FaultTree do
   end
 
   @doc """
+  Validate that TRANSFER gates have a source that exists in the tree.
+  """
+  def validate_transfer(tree, node = %Node{type: :transfer}) do
+    case find_by_field(tree, :name, node.source) do
+      nil -> {:error, "Source not found for TRANSFER gate"}
+      _ -> {:ok, tree}
+    end
+  end
+  def validate_transfer(tree, _node), do: {:ok, tree}
+
+  @doc """
   Calculate the probability of failure for a given node.
   The node must have all of its children with defined probabilities.
+
+  For TRANSFER gates, the probability is copied from the source node. If the
+  source node was not calculated before the transfer gate is reached, the probability
+  will be calculated twice. This will be inefficient, but mathemetically correct.
   """
-  def probability(node = %Node{type: :basic}), do: node
-  def probability(node = %Node{probability: p}) when p != nil, do: node
-  def probability(node = %Node{}) do
+  def probability(node = %Node{type: :basic}, _tree), do: node
+  def probability(node = %Node{probability: p}, _tree) when p != nil, do: node
+  def probability(node = %Node{}, tree) do
     p =
       case node.type do
         :or -> Gate.Or.probability(node.children)
         :and -> Gate.And.probability(node.children)
         :atleast -> Gate.AtLeast.probability(node.atleast, node.children)
+        :transfer -> tree |> find_source_node(node.source) |> probability(tree) |> Map.get(:probability)
       end
     Map.put(node, :probability, p)
   end
@@ -194,7 +222,7 @@ defmodule FaultTree do
 
     node
     |> Map.put(:children, children)
-    |> probability()
+    |> probability(tree)
   end
 
   @doc """
@@ -208,5 +236,12 @@ defmodule FaultTree do
 
   defp find_children(node, nodes), do: Enum.filter(nodes, fn x -> x.parent == node.name end)
   defp find_root(tree), do: find_by_id(tree, 0)
-  defp find_by_id(tree, id), do: tree.nodes |> Enum.find(fn %{id: i} -> i == id end)
+  defp find_by_id(tree, id), do: find_by_field(tree, :id, id)
+  defp find_by_field(tree, field, value), do: tree.nodes |> Enum.find(fn node -> Map.get(node, field) == value end)
+
+  defp find_source_node(tree, source) do
+    tree.nodes
+    |> Stream.filter(fn %Node{type: type} -> type != :transfer end)
+    |> Enum.find(fn %Node{name: name} -> name == source end)
+  end
 end

@@ -4,12 +4,18 @@
 
 let duration = 200;
 const width = 960,
-  height = 800,
-  rectW = 124,
-  rectH = 90,
-  TrectH = 24;
+      height = 800,
+      rectW = 124,
+      rectH = 90,
+      TrectH = 24;
 const width_initial = width / 2 - 60;
 const DESC_WRAP_LEN = Math.floor(rectW / 5);
+const RECT_CENTER = (rectW / 2) - 2;
+
+// Color definitions
+const TRANSFER_COLOR = "red",
+      NAME_COLOR = "magenta",
+      STATS_COLOR = "navy";
 
 const redraw = () => {
   svg.attr(
@@ -39,9 +45,9 @@ data.y0 = height / 2;
 
 const elbow = d => {
   const sourceY = d.source.y + TrectH,
-    sourceX = d.source.x + rectW / 2 - 2,
+    sourceX = d.source.x + RECT_CENTER,
     targetY = d.target.y + TrectH + 20,
-    targetX = d.target.x + rectW / 2 - 2;
+    targetX = d.target.x + RECT_CENTER;
   const v = (sourceY + targetY) / 2;
   return `M${sourceX},${sourceY}V${v}H${targetX}V${targetY}`;
 };
@@ -51,10 +57,12 @@ const tree = d3.layout
   .nodeSize([rectW * 1.15, rectH * 1.2])
   .separation((a, b) => (a.parent == b.parent ? 1 : 1.2));
 
+const isTransfer = d => d.type === "transfer";
+
 const update = source => {
   const nodes = tree.nodes(data);
   const links = tree.links(nodes);
-  const node = svg.selectAll("g.node").data(nodes, d => d.name);
+  const node = svg.selectAll("g.node").data(nodes, d => d.id);
 
   // original params:
   //
@@ -115,7 +123,8 @@ const update = source => {
   const house = "m 45,50 0,15 30,0 0,-15 -15,-15  -15,15";
   const undeveloped = "m 60,35 m 0,0 l 24,15 l -24,15 l -24,-15 z";
   const component =
-    "m 75, 50 a15,15 .2 0,0 -15,-15 a15,15 .2 0,0 -15,15 a15,15 .2 0,0 15,15 a15,15 .2 0,0 15,-15";
+    "m 75,50 a15,15 .2 0,0 -15,-15 a15,15 .2 0,0 -15,15 a15,15 .2 0,0 15,15 a15,15 .2 0,0 15,-15";
+  const transferGate = `M${RECT_CENTER},65 H45 L${RECT_CENTER},35 L75,65 Z`;
   nodeEnter
     .append("path")
     .attr("d", d => {
@@ -126,6 +135,8 @@ const update = source => {
           return andGate;
         case "atleast":
           return atLeastGate;
+        case "transfer":
+          return transferGate;
         default:
           return component;
       }
@@ -137,32 +148,23 @@ const update = source => {
       fill: "#fff"
     });
 
-  // styling for duplicates
-  nodeEnter
-    .append("text")
-    .attr("x", rectW / 2 - 2)
-    .attr("y", TrectH + 25)
-    .attr("text-anchor", "middle")
-    .attr("fill", d => (d.moe == 0 ? "red" : "magenta"))
-    .text(d => (d.moe > 0 ? d.moe : d.id));
-
   // Display K and N for ATLEAST gates
   nodeEnter
     .append("text")
-    .attr("x", rectW / 2 - 2)
+    .attr("x", RECT_CENTER)
     .attr("y", TrectH + 45)
     .attr("text-anchor", "middle")
     .attr("fill", "blue")
     .text(d => (d.type === "atleast" && d.p2 > 0 ? `${d.p1} : ${d.p2}` : ""));
 
-  // Styling for duplicates, and their source
+  // Styling for duplicates
   nodeEnter
     .append("text")
     .attr("x", rectW / 2 - 56)
     .attr("y", TrectH - 26)
     .attr("text-anchor", "middle")
-    .attr("fill", "magenta")
-    .text(d => (d.moe > 0 ? "R" : d.moe < 0 ? "S" : ""));
+    .attr("fill", TRANSFER_COLOR)
+    .text(d => (isTransfer(d) ? "DUP" : ""));
 
   // Display the unique name of the node
   nodeEnter
@@ -170,7 +172,7 @@ const update = source => {
     .attr("x", rectW / 2 + 3)
     .attr("y", TrectH - 26)
     .attr("text-anchor", "left")
-    .attr("fill", d => (d.moe == 0 ? "red" : "magenta"))
+    .attr("fill", d => (isTransfer(d) ? TRANSFER_COLOR : NAME_COLOR))
     .text(d => d.name);
 
   // Display probability of failure.
@@ -179,14 +181,14 @@ const update = source => {
     .attr("x", rectW / 2 + 19)
     .attr("y", TrectH + 36)
     .attr("text-anchor", "left")
-    .attr("fill", "navy")
+    .attr("fill", d => isTransfer(d) ? TRANSFER_COLOR : STATS_COLOR)
     .text("Prob");
   nodeEnter
     .append("text")
     .attr("x", rectW / 2 + 19)
     .attr("y", TrectH + 48)
     .attr("text-anchor", "left")
-    .attr("fill", "navy")
+    .attr("fill", d => isTransfer(d) ? TRANSFER_COLOR :  STATS_COLOR)
     .text(d => d.probability);
 
   const nodeUpdate = node

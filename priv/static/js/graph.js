@@ -155,7 +155,7 @@ const update = source => {
     .attr("y", TrectH + 45)
     .attr("text-anchor", "middle")
     .attr("fill", "blue")
-    .text(d => (d.type === "atleast" && d.p2 > 0 ? `${d.p1} : ${d.p2}` : ""));
+    .text(d => (d.atleast ? `${d.atleast.k} : ${d.atleast.n}` : ""));
 
   // Styling for duplicates
   nodeEnter

@@ -5,8 +5,8 @@
 <body>
   <form action="/analyze" method="POST">
     <textarea name="contents" cols="120" rows="40"></textarea><br/>
-    <input type="radio" name="output" value="json" checked /> Output JSON<br />
-    <input type="radio" name="output" value="html" /> Output HTML<br />
+    <input type="radio" name="output" value="json" /> Output JSON<br />
+    <input type="radio" name="output" value="html" checked /> Output HTML<br />
 
     <input type="submit" value="Render" />
   </form>

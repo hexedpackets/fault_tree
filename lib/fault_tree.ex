@@ -202,6 +202,7 @@ defmodule FaultTree do
   @spec parse(String.t()) :: t()
   def parse(doc), do: FaultTree.Parser.XML.parse(doc)
 
+  def find_children(%Node{type: :transfer}, _nodes), do: []
   def find_children(node, nodes), do: Enum.filter(nodes, fn x -> x.parent == node.name end)
   defp find_by_field(tree, field, value), do: tree.nodes |> Enum.find(fn node -> Map.get(node, field) == value end)
 end

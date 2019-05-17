@@ -26,6 +26,7 @@ defmodule FaultTree.MixProject do
       {:trot, "~> 0.7"},
       {:plug_cowboy, "~> 1.0"},
       {:poison, "~> 3.1.0"},
+      {:sweet_xml, "~> 0.6.6"},
     ]
   end
 end

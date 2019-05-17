@@ -136,6 +136,7 @@ defmodule FaultTree do
   @doc """
   Validate that the gate types allow setting this node as a child of its listed parent.
   """
+  def validate_parent(tree, %Node{parent: nil}), do: {:ok, tree}
   def validate_parent(tree, node) do
     parent = find_by_field(tree, :name, node.parent)
     case parent do
@@ -234,10 +235,20 @@ defmodule FaultTree do
     Poison.encode!(tree)
   end
 
+  @doc """
+  Convert from a string containing fault tree logic into the tree object.
+  """
+  @spec parse(String.t()) :: t()
+  def parse(doc), do: FaultTree.Parser.XML.parse(doc)
+
   defp find_children(node, nodes), do: Enum.filter(nodes, fn x -> x.parent == node.name end)
-  defp find_root(tree), do: find_by_id(tree, 0)
-  defp find_by_id(tree, id), do: find_by_field(tree, :id, id)
+  defp find_root(tree), do: Enum.find(tree.nodes, &valid_root?/1)
   defp find_by_field(tree, field, value), do: tree.nodes |> Enum.find(fn node -> Map.get(node, field) == value end)
+
+  defp valid_root?(%Node{type: :basic}), do: false
+  defp valid_root?(%Node{type: :transfer}), do: false
+  defp valid_root?(%Node{parent: :nil}), do: true
+  defp valid_root?(_), do: false
 
   defp find_source_node(tree, source) do
     tree.nodes

@@ -4,14 +4,21 @@ defmodule FaultTree.Router do
 
   static "/js", "js"
 
-  get "/graph" do
-    tree = FaultTree.create(:or)
-    |> FaultTree.add_basic("root", "0.01", "foo")
-    |> FaultTree.add_basic("root", "0.01", "bar")
-    |> FaultTree.add_or_gate("root", "layer2")
-    |> FaultTree.add_transfer("layer2", "foo")
+  get "/" do
+    render_template("upload.html.eex", [])
+  end
 
-    render_template("graph.html.eex", [tree: FaultTree.to_json(tree)])
+  post "/analyze" do
+    tree = conn.body_params
+    |> Map.get("contents")
+    |> FaultTree.parse()
+    |> FaultTree.to_json()
+
+    case Map.get(conn.body_params, "output") do
+      "json" -> tree
+      "html" -> render_template("graph.html.eex", [tree: tree])
+      _ -> :bad_request
+    end
   end
 
   import_routes Trot.NotFound

@@ -38,7 +38,7 @@ defmodule FaultTree.Parser.XML do
         description: ~x"@label | label/text()"os,
         type: ~x"name(or|and|atleast)"s |> transform_by(&String.to_atom/1),
         atleast_min: ~x"atleast/@min"io,
-        children: ~x"*/event/@name"sl,
+        children: ~x"*/event"l |> transform_by(&transform_events/1),
       ],
       events: [
         ~x"define-fault-tree/define-basic-event | model-data/define-basic-event"l,
@@ -63,10 +63,10 @@ defmodule FaultTree.Parser.XML do
     # Set parent attributes
     tree.nodes
     |> Enum.reduce(tree, fn node, tree ->
-      parents = tree.nodes |> Stream.filter(fn %{children: children} -> children != nil and node.name in children end) |> Enum.map(fn %{name: name} -> name end)
+      parents = tree.nodes |> Enum.filter(fn %{children: children} -> children != nil and node.name in children end)
       case parents do
         [] -> tree
-        [first | rest] -> tree |> set_parent(node, first) |> add_transfers(node, rest)
+        [first | rest] -> tree |> set_parent(node, first) |> add_duplicate_children(node, first) |> add_transfers(node, rest)
       end
     end)
     # Null out the child field, which will be a list of strings
@@ -87,15 +87,36 @@ defmodule FaultTree.Parser.XML do
   defp set_parent(tree, child, parent) do
     Map.update!(tree, :nodes, fn nodes ->
       Enum.map(nodes, fn node ->
-        if node.id == child.id, do: Map.put(node, :parent, parent), else: node
+        if node.id == child.id, do: Map.put(node, :parent, parent.name), else: node
       end)
     end)
+  end
+
+  defp add_duplicate_children(tree, child, parent) do
+    count = parent.children |> Enum.filter(fn c -> c == child.name end) |> Enum.count()
+    1..count
+    |> Enum.drop(1)
+    |> Enum.reduce(tree, fn _, tree -> FaultTree.add_transfer(tree, parent.name, child.name) end)
   end
 
   defp add_transfers(tree, _node, []), do: tree
   defp add_transfers(tree, node, [parent | rest]) do
     tree
-    |> FaultTree.add_transfer(parent, node.name)
+    |> FaultTree.add_transfer(parent.name, node.name)
+    |> add_duplicate_children(node, parent)
     |> add_transfers(node, rest)
   end
+
+  defp transform_events(nodes), do: nodes |> Enum.flat_map(&add_duplicate_events/1)
+
+  defp add_duplicate_events(node) do
+    event = node
+    |> xpath(~x".", name: ~x"./@name"s, count: ~x"./@count"io |> transform_by(&one_if_nil/1))
+
+    1..event[:count]
+    |> Enum.map(fn _ -> event[:name] end)
+  end
+
+  defp one_if_nil(nil), do: 1
+  defp one_if_nil(x), do: x
 end

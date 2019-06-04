@@ -143,9 +143,14 @@ defmodule FaultTree do
       %Node{type: :basic} -> {:error, "Basic nodes cannot have children"}
       %Node{type: :transfer} -> {:error, "Transfer nodes cannot have children"}
       %Node{type: :atleast} ->
-        case find_children(parent, tree.nodes) do
-          [] -> {:ok, tree}
-          _ -> {:error, "ATLEAST gates can only have a single child node"}
+        case {node.type, find_children(parent, tree.nodes)} do
+          {_, []} -> {:ok, tree}
+          {:transfer, children} ->
+            case Enum.filter(children, fn %{name: name} -> name != node.name end) do
+              [] -> {:ok, tree}
+              _ -> {:error, "ATLEAST gates can only have a single child node"}
+            end
+          {_, _} -> {:error, "ATLEAST gates can only have a single child node"}
         end
       _ -> {:ok, tree}
     end

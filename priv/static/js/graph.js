@@ -14,7 +14,6 @@ const RECT_CENTER = (rectW / 2) - 2;
 
 // Color definitions
 const TRANSFER_COLOR = "red",
-      NAME_COLOR = "magenta",
       STATS_COLOR = "navy";
 
 const redraw = () => {
@@ -43,11 +42,20 @@ zm.translate([width_initial, 20]);
 data.x0 = 0;
 data.y0 = height / 2;
 
+// Define the div for the tooltip
+const tooltip = d3
+      .select("body")
+      .append("div")
+      .style("position", "absolute")
+      .style("z-index", "10")
+      .style("visibility", "hidden")
+      .attr("class", "tooltip");
+
 const elbow = d => {
   const sourceY = d.source.y + TrectH,
-    sourceX = d.source.x + RECT_CENTER,
-    targetY = d.target.y + TrectH + 20,
-    targetX = d.target.x + RECT_CENTER;
+        sourceX = d.source.x + RECT_CENTER,
+        targetY = d.target.y + TrectH + 20,
+        targetX = d.target.x + RECT_CENTER;
   const v = (sourceY + targetY) / 2;
   return `M${sourceX},${sourceY}V${v}H${targetX}V${targetY}`;
 };
@@ -71,7 +79,7 @@ const update = source => {
     .attr("transform", d => "translate(" + source.x0 + "," + source.y0 + ")")
     .on("click", toggleCollapse);
 
-  // Create rectangle for node description. Description is in the middle of the box. Long descriptions are trimmed with elipses.
+  // Create rectangle for node info. Name is in the middle of the box. Long descriptions are displayed on hover.
   nodeEnter
     .append("rect")
     .attr("width", rectW)
@@ -84,15 +92,15 @@ const update = source => {
     .attr("x", rectW / 2)
     .attr("y", 14)
     .attr("text-anchor", "middle")
-    .text(d => {
-      if (!d.description) {
-        return "";
-      } else if (d.description.length < DESC_WRAP_LEN) {
-        return d.description;
-      } else {
-        return d.description.slice(0, DESC_WRAP_LEN - 3) + "...";
-      }
-    });
+    .text(d => d.name)
+    .on('mouseover', d => {
+      if (!d.description) return;
+      tooltip.text(d.description)
+        .style("visibility", "visible")
+        .style("left", (d3.event.pageX) + "px")
+        .style("top", (d3.event.pageY - 28) + "px");
+    })
+    .on("mouseout", d => tooltip.style("visibility", "hidden"));
 
   // Shapes for various node types, displayed below the description.
   const orGate =
@@ -152,15 +160,6 @@ const update = source => {
     .attr("text-anchor", "middle")
     .attr("fill", TRANSFER_COLOR)
     .text(d => (isTransfer(d) ? "DUP" : ""));
-
-  // Display the unique name of the node
-  nodeEnter
-    .append("text")
-    .attr("x", rectW / 2 + 3)
-    .attr("y", TrectH - 26)
-    .attr("text-anchor", "left")
-    .attr("fill", d => (isTransfer(d) ? TRANSFER_COLOR : NAME_COLOR))
-    .text(d => d.name);
 
   // Display probability of failure.
   nodeEnter

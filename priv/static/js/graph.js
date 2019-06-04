@@ -176,7 +176,7 @@ const update = source => {
     .attr("y", TrectH + 48)
     .attr("text-anchor", "left")
     .attr("fill", d => isTransfer(d) ? TRANSFER_COLOR :  STATS_COLOR)
-    .text(d => d.probability);
+    .text(d => d.probability.length < 8 ? d.probability : Number(d.probability).toExponential(6));
 
   const nodeUpdate = node
     .transition()

@@ -38,6 +38,7 @@ defmodule FaultTree.Parser.XML do
         description: ~x"@label | label/text()"os,
         type: ~x"name(or|and|atleast)"s |> transform_by(&String.to_atom/1),
         atleast_min: ~x"atleast/@min"io,
+        atleast_total: ~x"atleast/@total"io,
         children: ~x"*/event"l |> transform_by(&transform_events/1),
       ],
       events: [
@@ -76,11 +77,12 @@ defmodule FaultTree.Parser.XML do
   defp convert_event(event), do: Node |> struct(event) |> Map.put(:type, :basic)
 
   defp convert_gate(gate) do
-    case Map.pop(gate, :atleast_min) do
-      {nil, gate} -> struct(Node, gate)
-      {k, gate} ->
-        n = Enum.count(gate.children)
-        Node |> struct(gate) |> Map.put(:atleast, {k, n})
+    {min, gate} = Map.pop(gate, :atleast_min)
+    {total, gate} = Map.pop(gate, :atleast_total)
+    case {min, total} do
+      {nil, _} -> struct(Node, gate)
+      {_, nil} -> struct(Node, gate)
+      params -> Node |> struct(gate) |> Map.put(:atleast, params)
     end
   end
 

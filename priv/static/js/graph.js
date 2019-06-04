@@ -141,7 +141,14 @@ const update = source => {
       "stroke-width": 1,
       "stroke-linejoin": "round",
       fill: "#fff"
-    });
+    })
+    .on('mouseover', d => {
+      tooltip.text(`${d.type.toUpperCase()} gate`)
+        .style("visibility", "visible")
+        .style("left", (d3.event.pageX) + "px")
+        .style("top", (d3.event.pageY - 28) + "px");
+    })
+    .on("mouseout", d => tooltip.style("visibility", "hidden"));
 
   // Display K and N for ATLEAST gates
   nodeEnter

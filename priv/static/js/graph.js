@@ -49,7 +49,7 @@ const tooltip = d3
       .style("position", "absolute")
       .style("z-index", "10")
       .style("visibility", "hidden")
-      .attr("class", "tooltip");
+      .attr("class", "node-tooltip");
 
 const elbow = d => {
   const sourceY = d.source.y + TrectH,
@@ -222,7 +222,7 @@ h 28
   link
     .enter()
     .insert("path", "g")
-    .attr("class", "link")
+    .attr("class", "node-link")
     .attr("x", rectW / 2)
     .attr("y", rectH / 2)
     .attr("d", d => {

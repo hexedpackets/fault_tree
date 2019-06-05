@@ -10,7 +10,7 @@ by adding `fault_tree` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:fault_tree, "~> 0.1.0"}
+    {:fault_tree, "~> 0.2.0"}
   ]
 end
 ```

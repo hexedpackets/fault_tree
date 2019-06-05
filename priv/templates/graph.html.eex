@@ -21,6 +21,10 @@
         font: 10px sans-serif;
         font-weight: bold;
     }
+    .node text.atleast {
+        font: 8px sans-serif;
+        font-weight: bold;
+    }
     .link {
         fill: none;
         stroke: #ccc;

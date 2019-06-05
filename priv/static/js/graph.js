@@ -157,11 +157,12 @@ h 28
   // Display K and N for ATLEAST gates
   nodeEnter
     .append("text")
+    .attr("class", "atleast")
     .attr("x", RECT_CENTER)
     .attr("y", TrectH + 45)
     .attr("text-anchor", "middle")
     .attr("fill", "blue")
-    .text(d => (d.atleast ? `${d.atleast.k} : ${d.atleast.n}` : ""));
+    .text(d => d.atleast ? `${d.atleast.k} : ${d.atleast.n}` : "");
 
   // Styling for duplicates
   nodeEnter

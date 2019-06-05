@@ -19,7 +19,7 @@ defmodule FaultTree.Router do
     |> FaultTree.to_json()
 
     case Map.get(conn.body_params, "output") do
-      "json" -> tree
+      "json" -> {200, tree, %{"Content-Type": "application/json"}}
       "html" -> render_template("graph.html.eex", [tree: tree])
       _ -> :bad_request
     end

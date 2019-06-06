@@ -16,6 +16,8 @@ const RECT_CENTER = (rectW / 2) - 2;
 const TRANSFER_COLOR = "red",
       STATS_COLOR = "navy";
 
+const GRAPH_SELECTOR = "#fault-tree";
+
 const redraw = () => {
   svg.attr(
     "transform",
@@ -23,21 +25,21 @@ const redraw = () => {
   );
 };
 
-// the widget must select el, not "#body" as in html
 let zm;
 const svg = d3
-  .select("#body")
-  .append("svg")
-  .attr("width", "100%")
-  .attr("height", "100%")
-  .call(
-    (zm = d3.behavior
-      .zoom()
-      .scaleExtent([0.05, 5])
-      .on("zoom", redraw))
-  )
-  .append("g")
-  .attr("transform", `translate(${width_initial}, 50)`);
+      .select(GRAPH_SELECTOR)
+      .append("svg")
+      .classed("fault-tree-content", true)
+      .attr("width", "100%")
+      .attr("height", "100%")
+      .call(
+        (zm = d3.behavior
+         .zoom()
+         .scaleExtent([0.05, 5])
+         .on("zoom", redraw))
+      )
+      .append("g")
+      .attr("transform", `translate(${width_initial}, 50)`);
 zm.translate([width_initial, 20]);
 data.x0 = 0;
 data.y0 = height / 2;
@@ -282,5 +284,5 @@ const autocollapse = d => {
   update(data);
   autocollapse(data);
   duration = duration_backup;
-  d3.select("#body").style("height", "100%");
+  d3.select(GRAPH_SELECTOR).style("height", "100%");
 })();
